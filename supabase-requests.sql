@@ -20,7 +20,7 @@ on public.license_requests
 for insert
 to anon
 with check (
-  product_id = 'wlxy'
+  length(product_id) between 1 and 40
   and length(account_id) between 1 and 128
   and status = 'pending'
 );
