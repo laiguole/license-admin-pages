@@ -11,13 +11,15 @@
 - 授权中心后台：`https://laiguole.github.io/license-admin-pages/`
 - Supabase 项目：`https://vrpplnwjmevqvbdnsygg.supabase.co`
 - 本项目产品 ID：`[PRODUCT_ID]`
-- 授权文件桶：`[BUCKET]`
-- 授权文件对象：`[OBJECT]`（通常是 `accounts.json`）
+- 授权文件桶：`[BUCKET]`（推荐复用 `wlxy`）
+- 授权文件对象：`[OBJECT]`（推荐 `[PRODUCT_ID]/accounts.json`）
 - 公共只读地址：
 
 ```text
 https://vrpplnwjmevqvbdnsygg.supabase.co/storage/v1/object/public/[BUCKET]/[OBJECT]
 ```
+
+> 后续软件建议直接复用 `wlxy` 桶，例如 `wlxy/myapp/accounts.json`，不需要新建桶或改 Storage 写策略。
 
 ## 授权文件格式
 
@@ -95,6 +97,7 @@ https://vrpplnwjmevqvbdnsygg.supabase.co/storage/v1/object/public/[BUCKET]/[OBJE
      `{"product_id":"[PRODUCT_ID]","account_id":"[账号ID]","name":"[可选]","status":"pending"}`
    - `201` 表示提交成功；`409` 表示已有相同申请，按“已提交”处理。
    - 提交成功后提示“等待管理员审核”；管理员通过后，客户端下一次 30 秒复查会自动放行。
+   - 如果提交返回 401/403，管理员先在 Supabase 执行 `supabase-requests-generic.sql`，把申请策略放开到所有产品 ID。
 
 ## 管理员侧配置
 
