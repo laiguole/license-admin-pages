@@ -68,6 +68,15 @@ wlxy/
 
 推送到 `main` 后自动重建。
 
+本机也可以用项目自带脚本发布：
+
+```powershell
+$env:GITHUB_TOKEN = "ghp_..."
+python -I tools\deploy_github_pages.py
+```
+
+脚本会创建/更新仓库 `laiguole/license-admin-pages` 并开启 Pages。
+
 ## 新增软件
 
 1. 在 [config.js](config.js) 的 `products` 增加产品：
