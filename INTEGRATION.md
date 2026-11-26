@@ -82,6 +82,20 @@ https://vrpplnwjmevqvbdnsygg.supabase.co/storage/v1/object/public/[BUCKET]/[OBJE
    - 授权文件格式错误：按未授权处理，不要崩溃
    - 不要因为授权失败而反复弹窗；每个账号每次启动最多提示一次
 
+8. 申请授权
+   - 未授权时，在界面提供“申请授权”按钮，由用户主动点击，不要自动提交。
+   - 请求地址：
+     `https://vrpplnwjmevqvbdnsygg.supabase.co/rest/v1/license_requests`
+   - 请求头：
+     - `apikey: sb_publishable_qAttmbMgurwqyMS7AWKtdA_Nl5Ic76t`
+     - `Authorization: Bearer sb_publishable_qAttmbMgurwqyMS7AWKtdA_Nl5Ic76t`
+     - `Content-Type: application/json`
+     - `Prefer: return=minimal`
+   - 请求体：
+     `{"product_id":"[PRODUCT_ID]","account_id":"[账号ID]","name":"[可选]","status":"pending"}`
+   - `201` 表示提交成功；`409` 表示已有相同申请，按“已提交”处理。
+   - 提交成功后提示“等待管理员审核”；管理员通过后，客户端下一次 30 秒复查会自动放行。
+
 ## 管理员侧配置
 
 1. 在授权中心后台确认产品已添加：
