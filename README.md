@@ -1,86 +1,97 @@
-# 软件授权管理网站（GitHub Pages + Supabase）
+# 软件授权管理站
 
-静态管理后台：GitHub Pages 托管页面，Supabase Auth 负责管理员登录，Supabase Storage 保存各软件的 `accounts.json`。
+独立项目：GitHub Pages 静态授权后台 + Supabase Auth/Storage。
 
-## 一次性配置
+- 线上站点：https://laiguole.github.io/license-admin-pages/
+- GitHub 仓库：https://github.com/laiguole/license-admin-pages
+- Supabase 项目：https://vrpplnwjmevqvbdnsygg.supabase.co
 
-### 1. Supabase Storage 写权限 + 申请审核表
+## 功能
 
-打开 Supabase Dashboard → SQL Editor，依次执行：
+- 管理员邮箱/密码登录（Supabase Auth）
+- 多软件产品切换
+- 账号新增、名称/备注修改、启用/停用、删除
+- 待审核申请：显示账号 ID、所属软件、申请时间
+- 通过申请后自动写入对应软件的 `accounts.json`
+- 搜索、状态筛选、导入/导出
+- 修改管理员密码
 
-1. [supabase-setup.sql](supabase-setup.sql)：允许管理员写入 `wlxy` 桶
-2. [supabase-requests.sql](supabase-requests.sql)：创建 `license_requests` 申请审核表
+## 目录
 
-### 2. 管理员账号
+```text
+license-admin-site/
+├─ index.html / app.js / styles.css   # GitHub Pages 静态页面
+├─ config.js                          # Supabase public key 和产品列表
+├─ docs/
+│  ├─ AUTH-SYSTEM.md                  # 统一授权架构、客户端标准流程
+│  └─ INTEGRATION.md                  # 发给其他项目的接入指令
+├─ supabase/
+│  ├─ storage-policy.sql              # Storage 管理员写权限
+│  ├─ requests.sql                    # 申请表+策略（首次初始化）
+│  └─ requests-generic.sql            # 已有表时放开产品限制
+├─ ADMIN_LOGIN.txt                    # 本地登录信息，已 gitignore
+└─ .nojekyll
+```
 
-管理员账号必须带：
+## 授权数据
+
+存储桶：`wlxy`（公共读）
+
+```text
+wlxy/
+├─ accounts.json                 # 网院学习助手
+├─ myapp/accounts.json           # 后续软件
+└─ otherapp/accounts.json
+```
+
+格式：
 
 ```json
 {
-  "app_metadata": {
-    "role": "license_admin"
+  "updated": "2026-11-26",
+  "accounts": {
+    "账号ID": {
+      "active": true,
+      "name": "可选",
+      "note": "可选"
+    }
   }
 }
 ```
 
-可以在 Supabase Dashboard → Authentication → Users 新建用户，然后用 SQL 设置：
+## 部署
 
-```sql
-update auth.users
-set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb)
-  || '{"role":"license_admin"}'::jsonb
-where email = '你的管理员邮箱';
-```
+当前使用 GitHub Pages 的 **Deploy from a branch**：
 
-### 3. 填 anon key
+- 分支：`main`
+- 目录：`/(root)`
 
-在 Supabase Dashboard → Project Settings → API 复制 **anon public** key，填入 [config.js](config.js)：
+推送到 `main` 后自动重建。
+
+## 新增软件
+
+1. 在 [config.js](config.js) 的 `products` 增加产品：
 
 ```js
-supabaseAnonKey: "粘贴 anon public key"
+{
+  id: "myapp",
+  name: "新软件",
+  bucket: "wlxy",
+  object: "myapp/accounts.json",
+  description: "新软件账号授权"
+}
 ```
 
-不要填 `service_role` / `sb_secret_...`。静态网站里的 key 是公开的。
+2. 如果还没放开申请表产品限制，在 Supabase 执行一次 [supabase/requests-generic.sql](supabase/requests-generic.sql)。
+3. 按 [docs/INTEGRATION.md](docs/INTEGRATION.md) 接入客户端。
+4. 用户在客户端点“申请授权”，管理员在网站待审核列表通过。
 
-### 4. 发布到 GitHub Pages
-
-当前线上地址：
-
-```text
-https://laiguole.github.io/license-admin-pages/
-```
-
-已使用 **Deploy from a branch**：`main` → `/(root)`。
-
-以后更新：
-
-1. 修改 `config.js` 或页面文件；
-2. 推送到 `main`；
-3. GitHub Pages 会自动重新构建。
-
-不需要额外的构建命令或 workflow。
-
-## 日常使用
-
-1. 未授权用户登录软件后，点顶部 **申请授权**，客户端提交账号 ID 到“待审核申请”。
-2. 管理员打开授权站，待审核列表会显示账号 ID 和所属软件，点“通过”或“拒绝”。
-3. 通过后账号自动写入对应软件的 `accounts.json`，客户端 30 秒内自动放行。
-4. 也可以手动“新增账号”，不经过申请。
-5. 停用/删除账号后，客户端 5 分钟内自动失效。
-
-## 新增后续软件
-
-完整的统一授权说明见 [AUTH-SYSTEM.md](AUTH-SYSTEM.md)。简短流程：
-
-1. 在 [config.js](config.js) 的 `products` 增加产品（推荐复用 `wlxy` 桶，对象用 `<产品ID>/accounts.json`）。
-2. 在 Supabase 执行一次 [supabase-requests-generic.sql](supabase-requests-generic.sql)，让新软件也能提交申请。
-3. 新软件客户端按 [INTEGRATION.md](INTEGRATION.md) 接入账号检查和申请。
-4. 管理员在授权站“待审核申请”里通过，自动写入对应产品的 `accounts.json`。
+详细架构见 [docs/AUTH-SYSTEM.md](docs/AUTH-SYSTEM.md)。
 
 ## 安全
 
-- GitHub Pages 只能放 **anon public key**；绝不能放 service_role / sb_secret。
-- 管理员登录由 Supabase Auth 负责；只有 `app_metadata.role = license_admin` 的账号能进入管理页。
-- Storage 写策略同时校验管理员角色；普通用户即使拿到 anon key 也不能改授权文件。
-- 公共 `accounts.json` 仍然可读，客户端无需登录。
-- 建议在 Supabase Auth 设置里关闭公开注册（Disable signup），只保留手工创建的管理员。
+- 前端只能使用 `sb_publishable_...`。
+- `service_role` / `sb_secret_...` 只用于管理员本机配置，绝不进仓库或客户端。
+- 管理员账号必须有 `app_metadata.role = license_admin`。
+- 建议关闭 Supabase 公开注册。
+- `ADMIN_LOGIN.txt` 已被 `.gitignore` 排除，不要提交或分享。
