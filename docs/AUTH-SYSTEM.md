@@ -167,8 +167,8 @@ Storage 写策略保持现状即可，因为新软件复用 `wlxy` 桶。
 - Windows/WPF/WinForms：`D:\我的项目\wlxy-study-app\src\AccountService.cs`
 - Windows 客户端门禁和账号探测：`D:\我的项目\wlxy-study-app\src\MainForm.cs`
 - 麒麟 Electron：`D:\我的项目\wlxy-study-kylin\renderer.js`
-- 跨项目接入提示词：`INTEGRATION.md`
-- 授权站源码：`D:\我的项目\license-admin-pages`
+- 跨项目接入提示词：`docs/INTEGRATION.md`
+- 授权站源码：`D:\我的项目\license-admin-site`
 
 核心逻辑：
 
