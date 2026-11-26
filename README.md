@@ -77,6 +77,18 @@ python -I tools\deploy_github_pages.py
 
 脚本会创建/更新仓库 `laiguole/license-admin-pages` 并开启 Pages。
 
+## 麒麟系统
+
+授权站是网页，麒麟系统直接用浏览器打开即可，不需要单独安装：
+
+https://laiguole.github.io/license-admin-pages/
+
+也可以把 [kylin/license-admin.desktop](kylin/license-admin.desktop) 放到桌面双击打开，或运行：
+
+```bash
+bash kylin/start.sh
+```
+
 ## 新增软件
 
 1. 在 [config.js](config.js) 的 `products` 增加产品：
