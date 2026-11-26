@@ -12,6 +12,7 @@ const state = {
   products: Array.isArray(cfg.products) ? cfg.products : [],
   productId: localStorage.getItem("license_product") || "",
   accounts: {},
+  pending: [],
   updated: "",
   dirty: false,
   editingIsNew: false,
@@ -192,6 +193,7 @@ async function loadAccounts() {
     $("updatedAt").textContent = state.updated ? `最后发布：${state.updated}` : "";
     markDirty(false);
     renderAccounts();
+    await loadPending();
   } catch (err) {
     toast(err.message, true);
   } finally {
@@ -241,9 +243,11 @@ async function saveAccounts() {
     renderAccounts();
     markDirty(false);
     toast("已保存并发布");
+    return true;
   } catch (err) {
     markDirty(true);
     toast(`发布失败：${err.message || err}`, true);
+    return false;
   } finally {
     $("btnSave").disabled = false;
   }
@@ -260,6 +264,121 @@ function downloadExport() {
   a.download = `${product.id}-accounts.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+async function loadPending() {
+  const product = currentProduct();
+  const list = $("pendingList");
+  if (!product || !state.client) return;
+  try {
+    const { data, error } = await state.client
+      .from("license_requests")
+      .select("*")
+      .eq("product_id", product.id)
+      .eq("status", "pending")
+      .order("requested_at", { ascending: false });
+    if (error) throw error;
+    state.pending = data || [];
+    renderPending();
+  } catch (err) {
+    state.pending = [];
+    $("pendingCount").textContent = "0";
+    list.innerHTML = "";
+    const empty = document.createElement("div");
+    empty.className = "pending-empty";
+    empty.textContent = "待审核列表不可用：" + (err.message || err);
+    list.appendChild(empty);
+  }
+}
+
+function renderPending() {
+  const list = $("pendingList");
+  list.innerHTML = "";
+  $("pendingCount").textContent = String(state.pending.length);
+  if (!state.pending.length) {
+    const empty = document.createElement("div");
+    empty.className = "pending-empty";
+    empty.textContent = "暂无待审核申请";
+    list.appendChild(empty);
+    return;
+  }
+  for (const req of state.pending) {
+    const row = document.createElement("div");
+    row.className = "pending-row";
+    const main = document.createElement("div");
+    main.className = "pending-main";
+    const id = document.createElement("div");
+    id.className = "pending-id";
+    id.textContent = req.account_id || "";
+    const meta = document.createElement("div");
+    meta.className = "pending-meta";
+    const when = req.requested_at ? new Date(req.requested_at).toLocaleString("zh-CN", { hour12: false }) : "";
+    meta.textContent = [req.name, when].filter(Boolean).join(" · ") || "无附加信息";
+    main.append(id, meta);
+
+    const actions = document.createElement("div");
+    actions.className = "pending-actions";
+    const ok = document.createElement("button");
+    ok.type = "button";
+    ok.className = "primary";
+    ok.textContent = "通过";
+    ok.addEventListener("click", () => approvePending(req));
+    const no = document.createElement("button");
+    no.type = "button";
+    no.className = "danger";
+    no.textContent = "拒绝";
+    no.addEventListener("click", () => rejectPending(req));
+    actions.append(ok, no);
+    row.append(main, actions);
+    list.appendChild(row);
+  }
+}
+
+async function approvePending(req) {
+  const product = currentProduct();
+  if (!product || !req.account_id) return;
+  if (!confirm(`通过账号 ${req.account_id} 的授权申请？`)) return;
+  state.accounts[req.account_id] = {
+    ...(state.accounts[req.account_id] || {}),
+    active: true,
+    name: req.name || "",
+    note: req.note || "申请通过",
+    updated: today(),
+  };
+  markDirty(true);
+  renderAccounts();
+  const saved = await saveAccounts();
+  if (!saved) return;
+  try {
+    const { error } = await state.client
+      .from("license_requests")
+      .delete()
+      .eq("product_id", product.id)
+      .eq("account_id", req.account_id);
+    if (error) throw error;
+    toast("已通过并发布");
+    await loadPending();
+  } catch (err) {
+    toast(`账号已发布，但申请记录删除失败：${err.message || err}`, true);
+  }
+}
+
+async function rejectPending(req) {
+  const product = currentProduct();
+  if (!product || !req.account_id) return;
+  if (!confirm(`拒绝账号 ${req.account_id} 的授权申请？`)) return;
+  try {
+    const { error } = await state.client
+      .from("license_requests")
+      .delete()
+      .eq("product_id", product.id)
+      .eq("account_id", req.account_id);
+    if (error) throw error;
+    toast("已拒绝");
+    await loadPending();
+  } catch (err) {
+    toast(`操作失败：${err.message || err}`, true);
+  }
 }
 
 async function enterApp(session) {
@@ -338,6 +457,7 @@ function bindEvents() {
     await loadAccounts();
   });
   $("btnAddAccount").addEventListener("click", openAccountDialog);
+  $("btnRefreshPending").addEventListener("click", loadPending);
   $("btnSave").addEventListener("click", saveAccounts);
   $("searchInput").addEventListener("input", renderAccounts);
   $("statusFilter").addEventListener("change", renderAccounts);
