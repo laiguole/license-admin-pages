@@ -97,7 +97,7 @@ https://vrpplnwjmevqvbdnsygg.supabase.co/storage/v1/object/public/[BUCKET]/[OBJE
      `{"product_id":"[PRODUCT_ID]","account_id":"[账号ID]","name":"[可选]","status":"pending"}`
    - `201` 表示提交成功；`409` 表示已有相同申请，按“已提交”处理。
    - 提交成功后提示“等待管理员审核”；管理员通过后，客户端下一次 30 秒复查会自动放行。
-   - 如果提交返回 401/403，管理员先在 Supabase 执行 `supabase/requests-generic.sql`，把申请策略放开到所有产品 ID。
+   - 如果提交返回 401/403，管理员先在 Supabase 执行 `../supabase/requests-generic.sql`，把申请策略放开到所有产品 ID。
 
 ## 管理员侧配置
 
