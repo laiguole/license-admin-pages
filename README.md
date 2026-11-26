@@ -41,17 +41,21 @@ supabaseAnonKey: "粘贴 anon public key"
 
 ### 4. 发布到 GitHub Pages
 
-1. 新建 GitHub 仓库，把本目录全部文件推送到 `main` 分支。
-2. 仓库 Settings → Pages → Build and deployment → Source 选择 **GitHub Actions**。
-3. 推送后 Actions 会自动部署，地址形如：
+当前线上地址：
 
 ```text
-https://<用户名>.github.io/<仓库名>/
+https://laiguole.github.io/license-admin-pages/
 ```
 
-也可以手动运行 `Deploy GitHub Pages` workflow。
+已使用 **Deploy from a branch**：`main` → `/(root)`。
 
-如果不想用 Actions，也可以在 Pages 里选择 **Deploy from a branch** → `main` → `/(root)`，GitHub 会直接托管静态文件。
+以后更新：
+
+1. 修改 `config.js` 或页面文件；
+2. 推送到 `main`；
+3. GitHub Pages 会自动重新构建。
+
+不需要额外的构建命令或 workflow。
 
 ## 日常使用
 
