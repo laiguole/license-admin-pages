@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=软件授权管理
+Comment=打开软件授权管理站
+Exec=xdg-open https://laiguole.github.io/license-admin-pages/
+Icon=web-browser
+Terminal=false
+Categories=Office;Utility;
