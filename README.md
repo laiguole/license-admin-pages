@@ -4,9 +4,12 @@
 
 ## 一次性配置
 
-### 1. Supabase Storage 写权限
+### 1. Supabase Storage 写权限 + 申请审核表
 
-打开 Supabase Dashboard → SQL Editor，执行 [supabase-setup.sql](supabase-setup.sql)。
+打开 Supabase Dashboard → SQL Editor，依次执行：
+
+1. [supabase-setup.sql](supabase-setup.sql)：允许管理员写入 `wlxy` 桶
+2. [supabase-requests.sql](supabase-requests.sql)：创建 `license_requests` 申请审核表
 
 ### 2. 管理员账号
 
@@ -59,10 +62,11 @@ https://laiguole.github.io/license-admin-pages/
 
 ## 日常使用
 
-1. 打开 GitHub Pages 地址，用管理员邮箱/密码登录。
-2. 选择产品，新增/停用/删除账号。
-3. 点 **保存并发布**，写入 Supabase Storage 的 `accounts.json`。
-4. 客户端刷新后读取新的授权列表。
+1. 新用户登录软件后，客户端自动提交账号 ID 到“待审核申请”。
+2. 管理员打开授权站，在“待审核申请”里点“通过”或“拒绝”。
+3. 通过后账号自动写入 `accounts.json`，客户端 30 秒内自动放行。
+4. 也可以手动“新增账号”，不经过申请。
+5. 停用/删除账号后，客户端 5 分钟内自动失效。
 
 ## 新增后续软件
 
