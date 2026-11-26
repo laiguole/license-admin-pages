@@ -70,19 +70,12 @@ https://laiguole.github.io/license-admin-pages/
 
 ## 新增后续软件
 
-编辑 [config.js](config.js) 的 `products` 数组：
+完整的统一授权说明见 [AUTH-SYSTEM.md](AUTH-SYSTEM.md)。简短流程：
 
-```js
-{
-  id: "newapp",
-  name: "新软件",
-  bucket: "newapp",
-  object: "accounts.json",
-  description: "新软件账号授权"
-}
-```
-
-要写入新的桶，还需要在 SQL policy 的 `bucket_id in (...)` 中加入该桶，或把 policy 改为只校验管理员角色。
+1. 在 [config.js](config.js) 的 `products` 增加产品（推荐复用 `wlxy` 桶，对象用 `<产品ID>/accounts.json`）。
+2. 在 Supabase 执行一次 [supabase-requests-generic.sql](supabase-requests-generic.sql)，让新软件也能提交申请。
+3. 新软件客户端按 [INTEGRATION.md](INTEGRATION.md) 接入账号检查和申请。
+4. 管理员在授权站“待审核申请”里通过，自动写入对应产品的 `accounts.json`。
 
 ## 安全
 
