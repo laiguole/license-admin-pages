@@ -267,14 +267,12 @@ function downloadExport() {
 }
 
 async function loadPending() {
-  const product = currentProduct();
   const list = $("pendingList");
-  if (!product || !state.client) return;
+  if (!state.client) return;
   try {
     const { data, error } = await state.client
       .from("license_requests")
       .select("*")
-      .eq("product_id", product.id)
       .eq("status", "pending")
       .order("requested_at", { ascending: false });
     if (error) throw error;
@@ -313,7 +311,9 @@ function renderPending() {
     const meta = document.createElement("div");
     meta.className = "pending-meta";
     const when = req.requested_at ? new Date(req.requested_at).toLocaleString("zh-CN", { hour12: false }) : "";
-    meta.textContent = [req.name, when].filter(Boolean).join(" · ") || "无附加信息";
+    const product = state.products.find((p) => p.id === req.product_id);
+    const productName = product ? product.name : (req.product_id || "未知软件");
+    meta.textContent = [`软件：${productName}`, req.name, when].filter(Boolean).join(" · ") || "无附加信息";
     main.append(id, meta);
 
     const actions = document.createElement("div");
@@ -334,32 +334,69 @@ function renderPending() {
   }
 }
 
+async function fetchProductAccounts(product) {
+  const res = await fetch(publicUrl(product), { cache: "no-store" });
+  if (!res.ok) throw new Error(`读取 ${product.name || product.id} 授权文件失败（HTTP ${res.status}）`);
+  const data = await res.json();
+  return data.accounts && typeof data.accounts === "object" ? data.accounts : {};
+}
+
+async function uploadProductAccounts(product, accounts) {
+  const doc = { updated: today(), accounts };
+  const body = new Blob([JSON.stringify(doc, null, 2)], { type: "application/json" });
+  const { error } = await state.client.storage.from(product.bucket).upload(product.object, body, {
+    upsert: true,
+    cacheControl: "no-cache",
+    contentType: "application/json",
+  });
+  if (error) throw error;
+  return doc;
+}
+
 async function approvePending(req) {
-  const product = currentProduct();
-  if (!product || !req.account_id) return;
-  if (!confirm(`通过账号 ${req.account_id} 的授权申请？`)) return;
-  state.accounts[req.account_id] = {
-    ...(state.accounts[req.account_id] || {}),
-    active: true,
-    name: req.name || "",
-    note: req.note || "申请通过",
-    updated: today(),
-  };
-  markDirty(true);
-  renderAccounts();
-  const saved = await saveAccounts();
-  if (!saved) return;
+  const product = state.products.find((p) => p.id === req.product_id);
+  if (!product) {
+    toast(`产品 ${req.product_id} 未在 config.js 中配置，无法授权`, true);
+    return;
+  }
+  if (!req.account_id) return;
+  if (!confirm(`通过 ${product.name} 的账号 ${req.account_id}？`)) return;
+
   try {
+    if (product.id === state.productId) {
+      state.accounts[req.account_id] = {
+        ...(state.accounts[req.account_id] || {}),
+        active: true,
+        name: req.name || "",
+        note: req.note || "申请通过",
+        updated: today(),
+      };
+      markDirty(true);
+      renderAccounts();
+      const saved = await saveAccounts();
+      if (!saved) return;
+    } else {
+      const accounts = await fetchProductAccounts(product);
+      accounts[req.account_id] = {
+        active: true,
+        ...(req.name ? { name: req.name } : {}),
+        note: req.note || "申请通过",
+        updated: today(),
+      };
+      await uploadProductAccounts(product, accounts);
+    }
+
     const { error } = await state.client
       .from("license_requests")
       .delete()
       .eq("product_id", product.id)
       .eq("account_id", req.account_id);
     if (error) throw error;
-    toast("已通过并发布");
+    toast(`已通过并发布到 ${product.name}`);
     await loadPending();
+    if (product.id === state.productId) await loadAccounts();
   } catch (err) {
-    toast(`账号已发布，但申请记录删除失败：${err.message || err}`, true);
+    toast(`审核失败：${err.message || err}`, true);
   }
 }
 
