@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>软件授权管理</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="setupBanner" class="setup-banner hidden">
+    尚未配置 Supabase anon key，请先编辑 <code>config.js</code>。
+  </div>
+
+  <div id="loginView" class="login-wrap">
+    <form id="loginForm" class="login-card">
+      <div class="logo">授</div>
+      <h1>软件授权管理</h1>
+      <p class="muted">管理员登录</p>
+      <label class="field">
+        <span>邮箱</span>
+        <input id="loginEmail" type="email" autocomplete="username" required autofocus>
+      </label>
+      <label class="field">
+        <span>密码</span>
+        <input id="loginPassword" type="password" autocomplete="current-password" required>
+      </label>
+      <button id="loginButton" class="primary wide" type="submit">登录</button>
+      <div id="loginError" class="error"></div>
+    </form>
+  </div>
+
+  <div id="appView" class="app hidden">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">授</span><span>软件授权管理</span></div>
+      <div class="top-actions">
+        <label class="product-picker">
+          <span>产品</span>
+          <select id="productSelect"></select>
+        </label>
+        <button id="btnRefresh" class="ghost" type="button">刷新</button>
+        <button id="btnPassword" class="ghost" type="button">修改密码</button>
+        <button id="btnLogout" class="ghost" type="button">退出</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="hero">
+        <div>
+          <h1 id="productTitle">授权列表</h1>
+          <p id="productDesc" class="muted">管理各软件的登录账号授权。</p>
+        </div>
+        <div class="stats">
+          <div class="stat"><span id="statTotal">0</span><small>账号总数</small></div>
+          <div class="stat good"><span id="statActive">0</span><small>已启用</small></div>
+          <div class="stat warn"><span id="statDisabled">0</span><small>已停用</small></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="toolbar">
+          <input id="searchInput" class="search" type="search" placeholder="搜索账号 ID / 名称 / 备注">
+          <select id="statusFilter">
+            <option value="all">全部状态</option>
+            <option value="active">已启用</option>
+            <option value="disabled">已停用</option>
+          </select>
+          <button id="btnAddAccount" class="primary" type="button">新增账号</button>
+          <button id="btnImport" class="ghost" type="button">导入</button>
+          <input id="importFile" type="file" accept="application/json,.json" hidden>
+          <a id="btnExport" class="button ghost" href="#" download>导出</a>
+          <button id="btnSave" class="primary save" type="button">保存并发布</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-id">账号 ID</th>
+                <th>名称</th>
+                <th>备注</th>
+                <th class="col-status">状态</th>
+                <th class="col-updated">更新</th>
+                <th class="col-actions"></th>
+              </tr>
+            </thead>
+            <tbody id="accountBody"></tbody>
+          </table>
+          <div id="emptyState" class="empty hidden">暂无账号，点击“新增账号”添加。</div>
+        </div>
+
+        <div class="panel-footer">
+          <span id="saveState" class="muted">已同步</span>
+          <span id="updatedAt" class="muted"></span>
+        </div>
+      </section>
+
+      <p class="hint">
+        新增后续软件：编辑 <code>config.js</code> 中的 <code>products</code> 数组，填写产品 ID、名称、Supabase 桶和 accounts.json 路径，然后重新发布到 GitHub Pages。
+      </p>
+    </main>
+  </div>
+
+  <dialog id="accountDialog">
+    <form id="accountForm" method="dialog">
+      <h2 id="accountDialogTitle">新增账号</h2>
+      <label class="field"><span>账号 ID</span><input id="accountId" required maxlength="128"></label>
+      <label class="field"><span>名称</span><input id="accountName" maxlength="80" placeholder="可选"></label>
+      <label class="field"><span>备注</span><input id="accountNote" maxlength="200" placeholder="可选"></label>
+      <label class="check"><input id="accountActive" type="checkbox" checked><span>启用</span></label>
+      <div class="dialog-actions">
+        <button id="accountCancel" class="ghost" type="button">取消</button>
+        <button class="primary" type="submit">确定</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="passwordDialog">
+    <form id="passwordForm" method="dialog">
+      <h2>修改密码</h2>
+      <label class="field"><span>新密码（至少 8 位）</span><input id="newPassword" type="password" minlength="8" required></label>
+      <label class="field"><span>确认新密码</span><input id="confirmPassword" type="password" minlength="8" required></label>
+      <div class="dialog-actions">
+        <button id="passwordCancel" class="ghost" type="button">取消</button>
+        <button class="primary" type="submit">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="./config.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
